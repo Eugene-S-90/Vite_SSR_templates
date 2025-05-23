@@ -1,61 +1,92 @@
 import './App.css'
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import Home from './routes/Home'
+import Products from './routes/Products'
+import Settings from './routes/Settings'
 
-// Define the type for our initial props
-interface InitialProps {
-  serverTime: string;
-  serverData: {
-    message: string;
-    items: string[];
+// Define types for route-specific data
+interface RouteData {
+  homeData: {
+    title: string;
+    welcomeMessage: string;
+    stats: {
+      visitors: number;
+      activeUsers: number;
+    };
   };
+  products: {
+    id: number;
+    name: string;
+    price: number;
+  }[];
+  settings: {
+    theme: string;
+    notifications: boolean;
+    language: string;
+  };
+  serverData: string;
 }
 
 interface AppProps {
-  initialProps?: InitialProps;
+  initialProps: RouteData;
 }
 
 function App({ initialProps }: AppProps) {
-  const [count, setCount] = useState(0)
+  const location = useLocation();
+  const [currentProps, setCurrentProps] = useState<RouteData>(initialProps);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchServerData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch fresh data from server for the current route
+        const response = await fetch(location.pathname, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentProps(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch server data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // fetchServerData();
+  }, [location.pathname]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      
-      {/* Display server-side data */}
-      {initialProps && (
-        <div className="server-data">
-          <h2>Server Data:</h2>
-          <p>Server Time: {initialProps.serverTime}</p>
-          <p>Message: {initialProps.serverData.message}</p>
-          <ul>
-            {initialProps.serverData.items.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div className="app">
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/products">Products</Link>
+        <Link to="/settings">Settings</Link>
+      </nav>
 
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      <main>
+        <div className="server-info">
+          {isLoading ? (
+            <div className="loading">Loading fresh data from server...</div>
+          ) : (
+            <>
+              <strong>Server Data:</strong> {currentProps.serverData}
+            </>
+          )}
+        </div>
+        <Routes>
+          <Route index element={<Home homeData={currentProps.homeData} />} />
+          <Route path="products" element={<Products products={currentProps.products} />} />
+          <Route path="settings" element={<Settings settings={currentProps.settings} />} />
+        </Routes>
+      </main>
+    </div>
   )
 }
 

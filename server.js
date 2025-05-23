@@ -32,6 +32,26 @@ if (!isProduction) {
   app.use(base, sirv('./dist/client', { extensions: [] }))
 }
 
+// Handle JSON requests for route data
+app.get('*all', async (req, res, next) => {
+  const url = req.originalUrl.replace(base, '')
+  
+  // If client requests JSON, send route data
+  if (req.headers.accept?.includes('application/json')) {
+    try {
+      const { render } = await vite.ssrLoadModule('/src/entry-server.tsx')
+      const { initialProps } = await render(url)
+      return res.json(initialProps)
+    } catch (e) {
+      console.error(e)
+      return res.status(500).json({ error: 'Failed to load route data' })
+    }
+  }
+  
+  // Otherwise, continue to HTML rendering
+  next()
+})
+
 // Serve HTML
 app.use('*all', async (req, res) => {
   try {
@@ -44,7 +64,15 @@ app.use('*all', async (req, res) => {
     if (!isProduction) {
       // Always read fresh template in development
       template = await fs.readFile('./index.html', 'utf-8')
-      template = await vite.transformIndexHtml(url, template)
+      // Let Vite handle CSS imports
+      template = await vite.transformIndexHtml(url, `
+        ${template.replace(
+          '<!--app-head-->',
+          `
+          <link rel="stylesheet" type="text/css" href="/@fs/${process.cwd()}/src/initialStyles.css" />
+          `
+        )}`
+      )
       render = (await vite.ssrLoadModule('/src/entry-server.tsx')).render
     } else {
       template = templateHtml
@@ -68,6 +96,7 @@ app.use('*all', async (req, res) => {
     res.status(200).set({ 'Content-Type': 'text/html' }).send(html)
   } catch (e) {
     vite?.ssrFixStacktrace(e)
+    console.log('Error:', e.message) // Debug log
     console.log(e.stack)
     res.status(500).end(e.stack)
   }
