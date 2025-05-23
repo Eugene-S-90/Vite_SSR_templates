@@ -1,22 +1,17 @@
 import './App.css'
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
+import useStore from './store'
+import { useShallow } from 'zustand/react/shallow'
 
-// Define the type for our initial props
-interface InitialProps {
-  serverTime: string;
-  serverData: {
-    message: string;
-    items: string[];
-  };
-}
-
-interface AppProps {
-  initialProps?: InitialProps;
-}
-
-function App({ initialProps }: AppProps) {
-  const [count, setCount] = useState(0)
+function App() {
+  // Subscribe to store updates
+  const { count, serverTime, message, items, incrementCount } = useStore(useShallow((state) => ({
+    count: state.count,
+    serverTime: state.serverTime,
+    message: state.message,
+    items: state.items,
+    incrementCount: state.incrementCount
+  })))
 
   return (
     <>
@@ -30,22 +25,20 @@ function App({ initialProps }: AppProps) {
       </div>
       <h1>Vite + React</h1>
       
-      {/* Display server-side data */}
-      {initialProps && (
-        <div className="server-data">
-          <h2>Server Data:</h2>
-          <p>Server Time: {initialProps.serverTime}</p>
-          <p>Message: {initialProps.serverData.message}</p>
-          <ul>
-            {initialProps.serverData.items.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Display store data */}
+      <div className="server-data">
+        <h2>Server Data:</h2>
+        <p>Server Time: {serverTime}</p>
+        <p>Message: {message}</p>
+        <ul>
+          {items.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      </div>
 
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
+        <button onClick={incrementCount}>
           count is {count}
         </button>
         <p>

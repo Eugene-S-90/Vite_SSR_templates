@@ -32,6 +32,12 @@ if (!isProduction) {
   app.use(base, sirv('./dist/client', { extensions: [] }))
 }
 
+// Create a safe script tag with serialized data
+const createStateScript = (data) => {
+  const serializedData = JSON.stringify(data).replace(/</g, '\\u003c')
+  return `<script id="__INITIAL_DATA__" type="application/json">${serializedData}</script>`
+}
+
 // Serve HTML
 app.use('*all', async (req, res) => {
   try {
@@ -53,17 +59,13 @@ app.use('*all', async (req, res) => {
 
     const rendered = await render(url)
 
-    // Inject initial props into the HTML
-    const initialPropsScript = `
-      <script>
-        window.__INITIAL_PROPS__ = ${JSON.stringify(rendered.initialProps)};
-      </script>
-    `
+    // Create safe script tag with initial data
+    const stateScript = createStateScript(rendered.initialProps)
 
     const html = template
       .replace(`<!--app-head-->`, rendered.head ?? '')
       .replace(`<!--app-html-->`, rendered.html ?? '')
-      .replace('</head>', `${initialPropsScript}</head>`)
+      .replace('</head>', `${stateScript}</head>`)
 
     res.status(200).set({ 'Content-Type': 'text/html' }).send(html)
   } catch (e) {

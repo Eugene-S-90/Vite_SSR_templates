@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { renderToString } from 'react-dom/server'
 import App from './App'
+import useStore from './store'
 
 export function render(_url: string) {
   // Example server-side data
@@ -12,13 +13,21 @@ export function render(_url: string) {
     }
   }
 
+  // Initialize store with server data
+  useStore.setState({
+    serverTime: initialProps.serverTime,
+    message: initialProps.serverData.message,
+    items: initialProps.serverData.items,
+    count: 0
+  })
+
   const html = renderToString(
     <StrictMode>
-      <App initialProps={initialProps} />
+      <App />
     </StrictMode>,
   )
   
-  // Return both HTML and initial props
+  // Return both HTML and initial props for client hydration
   return { 
     html,
     initialProps 

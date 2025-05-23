@@ -1,20 +1,35 @@
 import './index.css'
-import { StrictMode } from 'react'
-import { hydrateRoot } from 'react-dom/client'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App'
+import useStore from './store'
 
-// Get the initial props from the window object
-declare global {
-  interface Window {
-    __INITIAL_PROPS__?: any;
+// Initialize store data from server
+const initializeData = () => {
+  const dataScript = document.getElementById('__INITIAL_DATA__')
+  if (dataScript) {
+    try {
+      const data = JSON.parse(dataScript.textContent || '{}')
+      // Initialize store with server data
+      useStore.setState({
+        serverTime: data.serverTime,
+        message: data.serverData.message,
+        items: data.serverData.items
+      })
+      // Remove the script tag immediately
+      dataScript.parentNode?.removeChild(dataScript)
+    } catch (error) {
+      console.error('Failed to parse initial data:', error)
+    }
   }
 }
 
-const initialProps = window.__INITIAL_PROPS__;
+// Initialize data before hydration
+initializeData()
 
-hydrateRoot(
-  document.getElementById('root')!,
-  <StrictMode>
-    <App initialProps={initialProps} />
-  </StrictMode>,
+ReactDOM.hydrateRoot(
+  document.getElementById('root') as HTMLElement,
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
 )
