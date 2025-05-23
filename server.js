@@ -6,13 +6,22 @@ const isProduction = process.env.NODE_ENV === 'production'
 const port = process.env.PORT || 5173
 const base = process.env.BASE || '/'
 
+// Create http server
+const app = express()
+
+// API Routes - Place these FIRST, before any other middleware
+app.get('/api/server-time', (req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.json({ 
+    serverTime: Date.now(),
+    timestamp: new Date().toISOString()
+  })
+})
+
 // Cached production assets
 const templateHtml = isProduction
   ? await fs.readFile('./dist/client/index.html', 'utf-8')
   : ''
-
-// Create http server
-const app = express()
 
 // Add Vite or respective production middlewares
 /** @type {import('vite').ViteDevServer | undefined} */
@@ -38,7 +47,7 @@ const createStateScript = (data) => {
   return `<script id="__INITIAL_DATA__" type="application/json">${serializedData}</script>`
 }
 
-// Serve HTML
+// Serve HTML - this should be the last route
 app.use('*all', async (req, res) => {
   try {
     const url = req.originalUrl.replace(base, '')

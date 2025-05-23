@@ -13,6 +13,7 @@ const initializeData = () => {
       // Initialize store with server data
       useStore.setState({
         serverTime: data.serverTime,
+        serverData: data.serverData,
         message: data.serverData.message,
         items: data.serverData.items
       })

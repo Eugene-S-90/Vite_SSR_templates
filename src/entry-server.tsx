@@ -6,7 +6,7 @@ import useStore from './store'
 export function render(_url: string) {
   // Example server-side data
   const initialProps = {
-    serverTime: new Date().toISOString(),
+    serverTime: new Date().toLocaleTimeString(),
     serverData: {
       message: 'Hello from server!',
       items: ['Item 1', 'Item 2', 'Item 3']
@@ -16,6 +16,7 @@ export function render(_url: string) {
   // Initialize store with server data
   useStore.setState({
     serverTime: initialProps.serverTime,
+    serverData: initialProps.serverData,
     message: initialProps.serverData.message,
     items: initialProps.serverData.items,
     count: 0

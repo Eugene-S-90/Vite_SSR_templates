@@ -1,17 +1,37 @@
 import './App.css'
 import reactLogo from './assets/react.svg'
+import MockChildComponent from './components/mockChildComponent'
 import useStore from './store'
+import { useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-
 function App() {
   // Subscribe to store updates
-  const { count, serverTime, message, items, incrementCount } = useStore(useShallow((state) => ({
+  const {
+    count,
+    timeDrift,
+    lastSync,
+    serverTime,
+    serverData,
+    isAutoIncrementing,
+    startAutoIncrement,
+    stopAutoIncrement
+  } = useStore(useShallow((state) => ({
     count: state.count,
+    timeDrift: state.timeDrift,
+    lastSync: state.lastSync,
     serverTime: state.serverTime,
-    message: state.message,
-    items: state.items,
-    incrementCount: state.incrementCount
+    serverData: state.serverData,
+    isAutoIncrementing: state.isAutoIncrementing,
+    startAutoIncrement: state.startAutoIncrement,
+    stopAutoIncrement: state.stopAutoIncrement
   })))
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopAutoIncrement()
+    }
+  }, [stopAutoIncrement])
 
   return (
     <>
@@ -24,30 +44,37 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
-      
-      {/* Display store data */}
-      <div className="server-data">
-        <h2>Server Data:</h2>
-        <p>Server Time: {serverTime}</p>
-        <p>Message: {message}</p>
-        <ul>
-          {items.map((item, index) => (
-            <li key={index}>{item}</li>
-          ))}
-        </ul>
+
+      {/* Display sync status */}
+      <div className="sync-status">
+        <h2>Time Sync Status:</h2>
+        <p>Server time: {serverTime}</p>
+        {timeDrift === -1 ? (
+          <p style={{ color: 'red' }}>Time sync failed! Check console for details.</p>
+        ) : (
+          <>
+            <p>Time Drift: {timeDrift}ms</p>
+            <p>Last Sync: {new Date(lastSync).toLocaleTimeString()}</p>
+          </>
+        )}
       </div>
 
       <div className="card">
-        <button onClick={incrementCount}>
-          count is {count}
+        <button onClick={() => isAutoIncrementing ? stopAutoIncrement() : startAutoIncrement()}>
+          {isAutoIncrementing ? 'Stop' : 'Start'} Auto Increment
         </button>
+        <p>Count: {count}</p>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
+      <p>serverData: {serverData.message}</p>
+      <div>serverData: {serverData.items.map(el => <p key={el}>{el}</p>)}</div>
+
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <MockChildComponent />
     </>
   )
 }
